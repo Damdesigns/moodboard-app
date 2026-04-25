@@ -25,7 +25,11 @@ export default function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [saved, setSaved] = useState([]);
+ const [saved, setSaved] = useState(() => {
+  try {
+    return JSON.parse(localStorage.getItem("moodboard_saved") || "[]");
+  } catch { return []; }
+});
   const [tab, setTab] = useState("create");
   const [usage, setUsage] = useState(getUsage());
   const remaining = FREE_LIMIT - usage;
@@ -75,11 +79,14 @@ export default function App() {
     setLoading(false);
   }
 
-  function handleSave() {
-    if (!result || result.error) return;
-    setSaved(prev => [{ ...result, prompt: input, id: Date.now() }, ...prev].slice(0, 20));
-  }
-
+function handleSave() {
+  if (!result || result.error) return;
+  setSaved(prev => {
+    const updated = [{ ...result, prompt: input, id: Date.now() }, ...prev].slice(0, 20);
+    localStorage.setItem("moodboard_saved", JSON.stringify(updated));
+    return updated;
+  });
+}
   return (
     <div style={{ minHeight: "100vh", background: "#0d0d0f", color: "#e8e4dc", fontFamily: "system-ui, sans-serif" }}>
       {/* Header */}
