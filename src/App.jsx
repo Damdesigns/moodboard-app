@@ -16,6 +16,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [saved, setSaved] = useState(() => {
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     try { return JSON.parse(localStorage.getItem("moodboard_saved") || "[]"); }
     catch { return []; }
   });
@@ -75,7 +76,11 @@ export default function App() {
 
   async function generate(prompt) {
     if (!user) { signInWithGoogle(); return; }
-    if (remaining <= 0) { window.open(STRIPE_LINK, "_blank"); return; }
+   if (remaining <= 0) {
+  setShowUpgradeModal(true);
+  return;
+}const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
 
     setLoading(true);
     setResult(null);
@@ -138,6 +143,34 @@ export default function App() {
 }
 
   return (
+    {showUpgradeModal && (
+  <div style={{
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
+    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100
+  }}>
+    <div style={{
+      background: "#141418", border: "0.5px solid #3a3740", borderRadius: 16,
+      padding: "2.5rem", maxWidth: 420, width: "90%", textAlign: "center"
+    }}>
+      <div style={{ fontSize: 40, marginBottom: 16 }}>🌙</div>
+      <h2 style={{ margin: "0 0 8px", fontSize: 22, color: "#e8e4dc", fontWeight: 500 }}>
+        You've used your 3 free boards
+      </h2>
+      <p style={{ margin: "0 0 24px", fontSize: 14, color: "#9d9aa6", lineHeight: 1.6 }}>
+        Upgrade to Pro for unlimited mood boards, unlimited saves, and full access — just $7/month.
+      </p>
+      <button onClick={() => window.open(STRIPE_LINK, "_blank")} style={{
+        background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", border: "none",
+        borderRadius: 10, color: "#fff", fontWeight: 500, fontSize: 16,
+        padding: "14px 32px", cursor: "pointer", width: "100%", marginBottom: 12
+      }}>Upgrade to Pro — $7/mo</button>
+      <button onClick={() => setShowUpgradeModal(false)} style={{
+        background: "transparent", border: "none", color: "#6b6870",
+        fontSize: 13, cursor: "pointer"
+      }}>Maybe later</button>
+    </div>
+  </div>
+)}
     <div style={{ minHeight: "100vh", background: "#0d0d0f", color: "#e8e4dc", fontFamily: "system-ui, sans-serif" }}>
       {/* Header */}
       <div style={{ borderBottom: "0.5px solid #2a2a2e", padding: "1.5rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
