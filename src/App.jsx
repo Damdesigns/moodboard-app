@@ -124,14 +124,18 @@ export default function App() {
     setLoading(false);
   }
 
-  function handleSave() {
-    if (!result || result.error) return;
-    setSaved(prev => {
-      const updated = [{ ...result, prompt: input, id: Date.now() }, ...prev].slice(0, 20);
-      localStorage.setItem("moodboard_saved", JSON.stringify(updated));
-      return updated;
-    });
+ function handleSave() {
+  if (!result || result.error) return;
+  if (!isPro && saved.length >= 5) {
+    window.open(STRIPE_LINK, "_blank");
+    return;
   }
+  setSaved(prev => {
+    const updated = [{ ...result, prompt: input, id: Date.now() }, ...prev].slice(0, 20);
+    localStorage.setItem("moodboard_saved", JSON.stringify(updated));
+    return updated;
+  });
+}
 
   return (
     <div style={{ minHeight: "100vh", background: "#0d0d0f", color: "#e8e4dc", fontFamily: "system-ui, sans-serif" }}>
