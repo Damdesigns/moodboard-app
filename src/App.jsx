@@ -16,12 +16,12 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [saved, setSaved] = useState(() => {
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     try { return JSON.parse(localStorage.getItem("moodboard_saved") || "[]"); }
     catch { return []; }
   });
   const [tab, setTab] = useState("create");
   const [usage, setUsage] = useState(0);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -35,55 +35,35 @@ export default function App() {
   }, []);
 
   async function loadUserData(u) {
-    const { data } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", u.email)
-      .single();
-
+    const { data } = await supabase.from("users").select("*").eq("email", u.email).single();
     if (!data) {
       await supabase.from("users").insert({
-        email: u.email,
-        is_pro: false,
-        generations_today: 0,
+        email: u.email, is_pro: false, generations_today: 0,
         last_generation_date: new Date().toDateString()
       });
-      setUsage(0);
-      setIsPro(false);
+      setUsage(0); setIsPro(false);
     } else {
       const today = new Date().toDateString();
       const count = data.last_generation_date === today ? data.generations_today : 0;
-      setUsage(count);
-      setIsPro(data.is_pro);
+      setUsage(count); setIsPro(data.is_pro);
     }
   }
 
   async function signInWithGoogle() {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin }
-    });
+    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
   }
 
   async function signOut() {
     await supabase.auth.signOut();
-    setUser(null);
-    setIsPro(false);
-    setUsage(0);
+    setUser(null); setIsPro(false); setUsage(0);
   }
 
   const remaining = isPro ? 999 : FREE_LIMIT - usage;
 
   async function generate(prompt) {
     if (!user) { signInWithGoogle(); return; }
-   if (remaining <= 0) {
-  setShowUpgradeModal(true);
-  return;
-}const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-
-
-    setLoading(true);
-    setResult(null);
+    if (remaining <= 0) { setShowUpgradeModal(true); return; }
+    setLoading(true); setResult(null);
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -113,65 +93,47 @@ export default function App() {
       const text = data.content?.find(b => b.type === "text")?.text || "";
       const clean = text.replace(/```json|```/g, "").trim();
       setResult(JSON.parse(clean));
-
-      // Update usage in DB
       const newCount = usage + 1;
       setUsage(newCount);
       await supabase.from("users").update({
-        generations_today: newCount,
-        last_generation_date: new Date().toDateString()
+        generations_today: newCount, last_generation_date: new Date().toDateString()
       }).eq("email", user.email);
-
     } catch (e) {
-      console.error(e);
-      setResult({ error: true });
+      console.error(e); setResult({ error: true });
     }
     setLoading(false);
   }
 
- function handleSave() {
-  if (!result || result.error) return;
-  if (!isPro && saved.length >= 5) {
-    window.open(STRIPE_LINK, "_blank");
-    return;
+  function handleSave() {
+    if (!result || result.error) return;
+    if (!isPro && saved.length >= 5) { setShowUpgradeModal(true); return; }
+    setSaved(prev => {
+      const updated = [{ ...result, prompt: input, id: Date.now() }, ...prev].slice(0, 100);
+      localStorage.setItem("moodboard_saved", JSON.stringify(updated));
+      return updated;
+    });
   }
-  setSaved(prev => {
-    const updated = [{ ...result, prompt: input, id: Date.now() }, ...prev].slice(0, 20);
-    localStorage.setItem("moodboard_saved", JSON.stringify(updated));
-    return updated;
-  });
-}
+
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+  }
 
   return (
-    {showUpgradeModal && (
-  <div style={{
-    position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
-    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100
-  }}>
-    <div style={{
-      background: "#141418", border: "0.5px solid #3a3740", borderRadius: 16,
-      padding: "2.5rem", maxWidth: 420, width: "90%", textAlign: "center"
-    }}>
-      <div style={{ fontSize: 40, marginBottom: 16 }}>🌙</div>
-      <h2 style={{ margin: "0 0 8px", fontSize: 22, color: "#e8e4dc", fontWeight: 500 }}>
-        You've used your 3 free boards
-      </h2>
-      <p style={{ margin: "0 0 24px", fontSize: 14, color: "#9d9aa6", lineHeight: 1.6 }}>
-        Upgrade to Pro for unlimited mood boards, unlimited saves, and full access — just $7/month.
-      </p>
-      <button onClick={() => window.open(STRIPE_LINK, "_blank")} style={{
-        background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", border: "none",
-        borderRadius: 10, color: "#fff", fontWeight: 500, fontSize: 16,
-        padding: "14px 32px", cursor: "pointer", width: "100%", marginBottom: 12
-      }}>Upgrade to Pro — $7/mo</button>
-      <button onClick={() => setShowUpgradeModal(false)} style={{
-        background: "transparent", border: "none", color: "#6b6870",
-        fontSize: 13, cursor: "pointer"
-      }}>Maybe later</button>
-    </div>
-  </div>
-)}
     <div style={{ minHeight: "100vh", background: "#0d0d0f", color: "#e8e4dc", fontFamily: "system-ui, sans-serif" }}>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+          <div style={{ background: "#141418", border: "0.5px solid #3a3740", borderRadius: 16, padding: "2.5rem", maxWidth: 420, width: "90%", textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🌙</div>
+            <h2 style={{ margin: "0 0 8px", fontSize: 22, color: "#e8e4dc", fontWeight: 500 }}>You've reached your free limit</h2>
+            <p style={{ margin: "0 0 24px", fontSize: 14, color: "#9d9aa6", lineHeight: 1.6 }}>Upgrade to Pro for unlimited mood boards, unlimited saves, and full access — just $7/month.</p>
+            <button onClick={() => window.open(STRIPE_LINK, "_blank")} style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", border: "none", borderRadius: 10, color: "#fff", fontWeight: 500, fontSize: 16, padding: "14px 32px", cursor: "pointer", width: "100%", marginBottom: 12 }}>Upgrade to Pro — $7/mo</button>
+            <button onClick={() => setShowUpgradeModal(false)} style={{ background: "transparent", border: "none", color: "#6b6870", fontSize: 13, cursor: "pointer" }}>Maybe later</button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ borderBottom: "0.5px solid #2a2a2e", padding: "1.5rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
@@ -179,94 +141,45 @@ export default function App() {
           <p style={{ margin: "2px 0 0", fontSize: 13, color: "#6b6870" }}>turn a feeling into a visual world</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {user && !isPro && (
-            <div style={{ fontSize: 13, color: remaining > 0 ? "#6b6870" : "#f87171" }}>
-              {remaining > 0 ? `${remaining} free left today` : "No free generations left"}
-            </div>
-          )}
-          {user && isPro && (
-            <div style={{ fontSize: 13, color: "#8b5cf6" }}>✦ Pro</div>
-          )}
-          {!isPro && (
-            <button onClick={() => window.open(STRIPE_LINK, "_blank")} style={{
-              background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", border: "none",
-              borderRadius: 8, color: "#fff", fontWeight: 500, fontSize: 13,
-              padding: "7px 14px", cursor: "pointer"
-            }}>Go Pro $7/mo</button>
-          )}
+          {user && !isPro && <div style={{ fontSize: 13, color: remaining > 0 ? "#6b6870" : "#f87171" }}>{remaining > 0 ? `${remaining} free left today` : "No free generations left"}</div>}
+          {user && isPro && <div style={{ fontSize: 13, color: "#8b5cf6" }}>✦ Pro</div>}
+          {!isPro && <button onClick={() => window.open(STRIPE_LINK, "_blank")} style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", border: "none", borderRadius: 8, color: "#fff", fontWeight: 500, fontSize: 13, padding: "7px 14px", cursor: "pointer" }}>Go Pro $7/mo</button>}
           {["create", "saved"].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              background: tab === t ? "#1e1c22" : "transparent",
-              border: `0.5px solid ${tab === t ? "#3a3740" : "#2a2a2e"}`,
-              color: tab === t ? "#e8e4dc" : "#6b6870",
-              borderRadius: 8, padding: "6px 14px", fontSize: 13, cursor: "pointer"
-            }}>{t}</button>
+            <button key={t} onClick={() => setTab(t)} style={{ background: tab === t ? "#1e1c22" : "transparent", border: `0.5px solid ${tab === t ? "#3a3740" : "#2a2a2e"}`, color: tab === t ? "#e8e4dc" : "#6b6870", borderRadius: 8, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>{t}</button>
           ))}
           {user ? (
-            <button onClick={signOut} style={{
-              background: "transparent", border: "0.5px solid #2a2a2e",
-              borderRadius: 8, color: "#6b6870", fontSize: 13, padding: "6px 14px", cursor: "pointer"
-            }}>Sign out</button>
+            <button onClick={signOut} style={{ background: "transparent", border: "0.5px solid #2a2a2e", borderRadius: 8, color: "#6b6870", fontSize: 13, padding: "6px 14px", cursor: "pointer" }}>Sign out</button>
           ) : (
-            <button onClick={signInWithGoogle} style={{
-              background: "#1e1c22", border: "0.5px solid #3a3740",
-              borderRadius: 8, color: "#c4c0cc", fontSize: 13, padding: "6px 14px", cursor: "pointer"
-            }}>Sign in with Google</button>
+            <button onClick={signInWithGoogle} style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 8, color: "#c4c0cc", fontSize: 13, padding: "6px 14px", cursor: "pointer" }}>Sign in with Google</button>
           )}
         </div>
       </div>
 
       {tab === "create" ? (
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "2rem" }}>
-
-          {/* Paywall banner */}
           {user && !isPro && remaining <= 0 && (
             <div style={{ background: "#1a1015", border: "0.5px solid #8b5cf6", borderRadius: 12, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 500, color: "#e8e4dc", fontSize: 15 }}>You've used all 3 free generations today</p>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: "#9d9aa6" }}>Upgrade to Pro for unlimited boards — $7/month</p>
               </div>
-              <button onClick={() => window.open(STRIPE_LINK, "_blank")} style={{
-                background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", border: "none",
-                borderRadius: 8, color: "#fff", fontWeight: 500, fontSize: 14,
-                padding: "10px 20px", cursor: "pointer", whiteSpace: "nowrap"
-              }}>Upgrade Now</button>
+              <button onClick={() => setShowUpgradeModal(true)} style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", border: "none", borderRadius: 8, color: "#fff", fontWeight: 500, fontSize: 14, padding: "10px 20px", cursor: "pointer" }}>Upgrade Now</button>
             </div>
           )}
 
-          {/* Not signed in banner */}
           {!user && (
             <div style={{ background: "#141418", border: "0.5px solid #2a2a2e", borderRadius: 12, padding: "1.25rem 1.5rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 500, color: "#e8e4dc", fontSize: 15 }}>Sign in to start creating</p>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: "#9d9aa6" }}>Get 3 free mood boards per day</p>
               </div>
-              <button onClick={signInWithGoogle} style={{
-                background: "#1e1c22", border: "0.5px solid #3a3740",
-                borderRadius: 8, color: "#c4c0cc", fontSize: 14,
-                padding: "10px 20px", cursor: "pointer"
-              }}>Sign in with Google</button>
+              <button onClick={signInWithGoogle} style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 8, color: "#c4c0cc", fontSize: 14, padding: "10px 20px", cursor: "pointer" }}>Sign in with Google</button>
             </div>
           )}
 
-          {/* Input */}
           <div style={{ display: "flex", gap: 10, marginBottom: "2rem" }}>
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && input.trim() && generate(input.trim())}
-              placeholder="rainy Tokyo night, haunted library, melancholic autumn..."
-              style={{
-                flex: 1, background: "#141418", border: "0.5px solid #2a2a2e", borderRadius: 10,
-                color: "#e8e4dc", fontSize: 15, padding: "12px 16px", outline: "none"
-              }}
-            />
-            <button onClick={() => input.trim() && generate(input.trim())} disabled={loading} style={{
-              background: !user ? "#3a3740" : remaining > 0 ? "#8b5cf6" : "#3a3740",
-              border: "none", borderRadius: 10, color: "#fff",
-              fontWeight: 500, fontSize: 14, padding: "0 22px", cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.5 : 1
-            }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && input.trim() && generate(input.trim())} placeholder="rainy Tokyo night, haunted library, melancholic autumn..." style={{ flex: 1, background: "#141418", border: "0.5px solid #2a2a2e", borderRadius: 10, color: "#e8e4dc", fontSize: 15, padding: "12px 16px", outline: "none" }} />
+            <button onClick={() => input.trim() && generate(input.trim())} disabled={loading} style={{ background: !user ? "#3a3740" : remaining > 0 ? "#8b5cf6" : "#3a3740", border: "none", borderRadius: 10, color: "#fff", fontWeight: 500, fontSize: 14, padding: "0 22px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.5 : 1 }}>
               {loading ? "..." : !user ? "Sign in" : remaining > 0 ? "Generate" : "Upgrade"}
             </button>
           </div>
@@ -285,20 +198,12 @@ export default function App() {
                 <p style={{ margin: "0 0 10px", fontSize: 11, letterSpacing: "0.12em", color: "#6b6870", textTransform: "uppercase" }}>Palette</p>
                 <div style={{ display: "flex", gap: 8 }}>
                   {result.palette?.map((c, i) => (
-  <div key={i} style={{ flex: 1 }}>
-    <div
-      onClick={() => navigator.clipboard.writeText(c.hex)}
-      title="Click to copy"
-      style={{ height: 72, borderRadius: 8, background: c.hex, cursor: "pointer", position: "relative" }}
-    />
-    <p style={{ margin: "6px 0 0", fontSize: 11, color: "#6b6870", textAlign: "center" }}>{c.name}</p>
-    <p
-      onClick={() => navigator.clipboard.writeText(c.hex)}
-      title="Click to copy"
-      style={{ margin: "1px 0 0", fontSize: 10, color: "#4a4850", textAlign: "center", fontFamily: "monospace", cursor: "pointer" }}
-    >{c.hex} 📋</p>
-  </div>
-))}
+                    <div key={i} style={{ flex: 1 }}>
+                      <div onClick={() => copyToClipboard(c.hex)} title="Click to copy" style={{ height: 72, borderRadius: 8, background: c.hex, cursor: "pointer" }} />
+                      <p style={{ margin: "6px 0 0", fontSize: 11, color: "#6b6870", textAlign: "center" }}>{c.name}</p>
+                      <p onClick={() => copyToClipboard(c.hex)} title="Click to copy" style={{ margin: "1px 0 0", fontSize: 10, color: "#4a4850", textAlign: "center", fontFamily: "monospace", cursor: "pointer" }}>{c.hex} 📋</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -354,13 +259,13 @@ export default function App() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {saved.map(s => (
-                <div key={s.id} style={{ background: "#141418", border: "0.5px solid #2a2a2e", borderRadius: 14, padding: "1.25rem 1.5rem" }}>
+                <div key={s.id} onClick={() => { setResult(s); setInput(s.prompt); setTab("create"); }} style={{ background: "#141418", border: "0.5px solid #2a2a2e", borderRadius: 14, padding: "1.25rem 1.5rem", cursor: "pointer" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
                     <div>
                       <p style={{ margin: 0, fontWeight: 500, fontSize: 16, color: "#e8e4dc" }}>{s.title}</p>
                       <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b6870" }}>{s.prompt}</p>
                     </div>
-                    <button onClick={() => setSaved(prev => { const u = prev.filter(x => x.id !== s.id); localStorage.setItem("moodboard_saved", JSON.stringify(u)); return u; })} style={{ background: "transparent", border: "none", color: "#4a4850", fontSize: 16, cursor: "pointer" }}>✕</button>
+                    <button onClick={e => { e.stopPropagation(); setSaved(prev => { const u = prev.filter(x => x.id !== s.id); localStorage.setItem("moodboard_saved", JSON.stringify(u)); return u; }); }} style={{ background: "transparent", border: "none", color: "#4a4850", fontSize: 16, cursor: "pointer" }}>✕</button>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     {s.palette?.map((c, i) => (
