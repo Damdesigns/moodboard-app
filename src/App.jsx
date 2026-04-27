@@ -285,12 +285,20 @@ export default function App() {
                 <p style={{ margin: "0 0 10px", fontSize: 11, letterSpacing: "0.12em", color: "#6b6870", textTransform: "uppercase" }}>Palette</p>
                 <div style={{ display: "flex", gap: 8 }}>
                   {result.palette?.map((c, i) => (
-                    <div key={i} style={{ flex: 1 }}>
-                      <div style={{ height: 72, borderRadius: 8, background: c.hex }} />
-                      <p style={{ margin: "6px 0 0", fontSize: 11, color: "#6b6870", textAlign: "center" }}>{c.name}</p>
-                      <p style={{ margin: "1px 0 0", fontSize: 10, color: "#4a4850", textAlign: "center", fontFamily: "monospace" }}>{c.hex}</p>
-                    </div>
-                  ))}
+  <div key={i} style={{ flex: 1 }}>
+    <div
+      onClick={() => navigator.clipboard.writeText(c.hex)}
+      title="Click to copy"
+      style={{ height: 72, borderRadius: 8, background: c.hex, cursor: "pointer", position: "relative" }}
+    />
+    <p style={{ margin: "6px 0 0", fontSize: 11, color: "#6b6870", textAlign: "center" }}>{c.name}</p>
+    <p
+      onClick={() => navigator.clipboard.writeText(c.hex)}
+      title="Click to copy"
+      style={{ margin: "1px 0 0", fontSize: 10, color: "#4a4850", textAlign: "center", fontFamily: "monospace", cursor: "pointer" }}
+    >{c.hex} 📋</p>
+  </div>
+))}
                 </div>
               </div>
 
