@@ -115,32 +115,33 @@ export default function App() {
     });
   }
 
-  function copyToClipboard(text) {async function shareBoard() {
-  const el = document.getElementById("mood-board-result");
-  if (!el) return;
-  const canvas = await html2canvas(el, { backgroundColor: "#0d0d0f", scale: 2 });
-  const ctx = canvas.getContext("2d");
-  if (!isPro) {
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
-    ctx.font = "24px system-ui";
-    ctx.textAlign = "right";
-    ctx.fillText("moodboardai.space", canvas.width - 20, canvas.height - 20);
-  }
-  canvas.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${result.title || "moodboard"}.png`;
-    a.click();
-  });
-}
+  function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
+  }
+
+  async function shareBoard() {
+    const el = document.getElementById("mood-board-result");
+    if (!el) return;
+    const canvas = await html2canvas(el, { backgroundColor: "#0d0d0f", scale: 2 });
+    const ctx = canvas.getContext("2d");
+    if (!isPro) {
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.font = "24px system-ui";
+      ctx.textAlign = "right";
+      ctx.fillText("moodboardai.space", canvas.width - 20, canvas.height - 20);
+    }
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${result.title || "moodboard"}.png`;
+      a.click();
+    });
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0d0d0f", color: "#e8e4dc", fontFamily: "system-ui, sans-serif" }}>
 
-      {/* Upgrade Modal */}
       {showUpgradeModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
           <div style={{ background: "#141418", border: "0.5px solid #3a3740", borderRadius: 16, padding: "2.5rem", maxWidth: 420, width: "90%", textAlign: "center" }}>
@@ -153,7 +154,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Header */}
       <div style={{ borderBottom: "0.5px solid #2a2a2e", padding: "1.5rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 500, color: "#e8e4dc" }}>Mood Board</h1>
@@ -207,7 +207,7 @@ export default function App() {
           {result?.error && <div style={{ background: "#1a1015", border: "0.5px solid #3a2028", borderRadius: 12, padding: "1.5rem", color: "#f87171", fontSize: 14 }}>Something went wrong. Try again.</div>}
 
           {result && !result.error && (
-           <div id="mood-board-result">
+            <div id="mood-board-result">
               <div style={{ marginBottom: "1.5rem" }}>
                 <h2 style={{ margin: 0, fontSize: 28, fontWeight: 500, color: "#e8e4dc" }}>{result.title}</h2>
                 <p style={{ margin: "6px 0 0", fontSize: 15, color: "#9d9aa6", fontStyle: "italic" }}>{result.tagline}</p>
@@ -267,9 +267,7 @@ export default function App() {
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => generate(input.trim())} style={{ background: "transparent", border: "0.5px solid #2a2a2e", borderRadius: 8, color: "#9d9aa6", fontSize: 13, padding: "9px 18px", cursor: "pointer" }}>Regenerate</button>
                 <button onClick={handleSave} style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 8, color: "#c4c0cc", fontSize: 13, padding: "9px 18px", cursor: "pointer" }}>Save to collection</button>
-                <button onClick={shareBoard} style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 8, color: "#c4c0cc", fontSize: 13, padding: "9px 18px", cursor: "pointer" }}>
-  {isPro ? "Export PNG" : "Share 📸"}
-</button>
+                <button onClick={shareBoard} style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 8, color: "#c4c0cc", fontSize: 13, padding: "9px 18px", cursor: "pointer" }}>{isPro ? "Export PNG" : "Share 📸"}</button>
               </div>
             </div>
           )}
