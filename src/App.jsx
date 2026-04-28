@@ -9,6 +9,54 @@ const supabase = createClient(
 
 const STRIPE_LINK = "https://buy.stripe.com/fZu28sgwWcqoa84cZcfnO00";
 const FREE_LIMIT = 3;
+const AESTHETICS = [
+  "rainy Tokyo night", "haunted Victorian library", "Soviet brutalism",
+  "deep sea bioluminescence", "1970s Italian cinema", "cottagecore witch",
+  "cyberpunk Bangkok", "North Korean propaganda poster", "Victorian plague doctor",
+  "abandoned Japanese pachinko parlor", "Saharan desert rave at sunrise",
+  "Cold War Berlin spy thriller", "underwater gothic cathedral",
+  "1920s speakeasy jazz club", "Martian dust storm settlement",
+  "medieval alchemist workshop", "neon noir detective agency",
+  "Scandinavian dark forest folklore", "90s grunge Seattle basement",
+  "ancient Egyptian tomb at midnight", "French New Wave cinema",
+  "Siberian gulag winter", "tropical brutalism", "art deco ocean liner",
+  "1960s NASA mission control", "baroque cathedral in ruins",
+  "Tokyo convenience store at 3am", "Venetian carnival masquerade",
+  "post-apocalyptic greenhouse", "Soviet cosmonaut training facility",
+  "1970s Munich psychedelia", "Mongolian steppe at dusk",
+  "underwater abandoned city", "WWI trench poetry", "Himalayan monastery snowstorm",
+  "1980s Miami Vice sunset", "Chernobyl exclusion zone spring",
+  "ancient Roman bathhouse", "noir detective rainy street",
+  "Nordic black metal forest", "1950s American diner", "Persian garden at night",
+  "brutalist Eastern European apartment block", "Amazonian shaman ritual",
+  "1930s Shanghai nightclub", "Arctic research station isolation",
+  "Indonesian shadow puppet theater", "Belle Époque Paris greenhouse",
+  "Cold War nuclear bunker", "Kyoto temple in autumn fog",
+  "1970s Berlin underground club", "Georgian manor house decay",
+  "Pacific island volcanic eruption", "Moroccan souk at midnight",
+  "1960s Mod London boutique", "Transylvanian castle thunderstorm",
+  "Japanese wabi-sabi tea ceremony", "Soviet constructivism poster",
+  "New Orleans voodoo jazz funeral", "Tibetan sky burial plateau",
+  "1940s Hollywood film noir", "Icelandic black sand beach storm",
+  "Ottoman palace harem", "1990s rave warehouse", "Cambodian jungle temple",
+  "Weimar Republic cabaret", "Chilean Atacama desert observatory",
+  "1920s Harlem Renaissance", "Finnish sauna winter night",
+  "Byzantine mosaic church", "cyberpunk favela rooftop",
+  "1970s Blaxploitation cinema", "Andean condor peak at dawn",
+  "medieval plague village", "1960s psychedelic poster art",
+  "Russian Orthodox monastery winter", "Deep South Gothic mansion",
+  "1980s Tokyo bubble economy", "Patagonian wilderness fog",
+  "ancient Greek symposium night", "Detroit abandoned factory",
+  "1950s Atomic Age suburban home", "Sufi whirling dervish ceremony",
+  "1970s Hong Kong action cinema", "Norwegian fjord winter storm",
+  "ancient Mayan observatory", "1920s Expressionist cinema",
+  "Siberian shaman ritual", "1960s Cape Canaveral rocket launch",
+  "Gothic Victorian funeral parlor", "1980s Spielberg suburban adventure",
+  "Berber desert nomad camp", "1970s Jamaican reggae studio",
+  "ancient Persian court", "brutalist parking garage midnight",
+  "1950s French Riviera glamour", "Mongolian throat singing ceremony",
+  "1930s Depression era dust bowl", "Japanese cherry blossom cemetery"
+];
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -46,7 +94,6 @@ export default function App() {
       const count = data.last_generation_date === today ? data.generations_today : 0;
       setUsage(count); setIsPro(data.is_pro);
     }
-
     const { data: boards } = await supabase
       .from("boards")
       .select("*")
@@ -112,6 +159,12 @@ export default function App() {
       console.error(e); setResult({ error: true });
     }
     setLoading(false);
+  }
+
+  function surpriseMe() {
+    const a = AESTHETICS[Math.floor(Math.random() * AESTHETICS.length)];
+    setInput(a);
+    generate(a);
   }
 
   async function handleSave() {
@@ -215,6 +268,7 @@ export default function App() {
 
           <div style={{ display: "flex", gap: 10, marginBottom: "2rem" }}>
             <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && input.trim() && generate(input.trim())} placeholder="rainy Tokyo night, haunted library, melancholic autumn..." style={{ flex: 1, background: "#141418", border: "0.5px solid #2a2a2e", borderRadius: 10, color: "#e8e4dc", fontSize: 15, padding: "12px 16px", outline: "none" }} />
+            <button onClick={surpriseMe} disabled={loading} title="Surprise me!" style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 10, color: "#c4c0cc", fontSize: 18, padding: "0 14px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.5 : 1 }}>🎲</button>
             <button onClick={() => input.trim() && generate(input.trim())} disabled={loading} style={{ background: !user ? "#3a3740" : remaining > 0 ? "#8b5cf6" : "#3a3740", border: "none", borderRadius: 10, color: "#fff", fontWeight: 500, fontSize: 14, padding: "0 22px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.5 : 1 }}>
               {loading ? "..." : !user ? "Sign in" : remaining > 0 ? "Generate" : "Upgrade"}
             </button>
