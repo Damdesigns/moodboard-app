@@ -36,6 +36,13 @@ export default function App() {
   }, []);
 
   async function loadUserData(u) {
+    const { data: boards } = await supabase
+  .from("boards")
+  .select("*")
+  .eq("email", u.email)
+  .order("created_at", { ascending: false });
+if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
+
     const { data } = await supabase.from("users").select("*").eq("email", u.email).single();
     if (!data) {
       await supabase.from("users").insert({
@@ -105,15 +112,16 @@ export default function App() {
     setLoading(false);
   }
 
-  function handleSave() {
-    if (!result || result.error) return;
-    if (!isPro && saved.length >= 5) { setShowUpgradeModal(true); return; }
-    setSaved(prev => {
-      const updated = [{ ...result, prompt: input, id: Date.now() }, ...prev].slice(0, 100);
-      localStorage.setItem("moodboard_saved", JSON.stringify(updated));
-      return updated;
-    });
-  }
+  async function handleSave() {
+  if (!result || result.error) return;
+  if (!isPro && saved.length >= 5) { setShowUpgradeModal(true); return; }
+  const entry = { ...result, prompt: input, id: Date.now() };
+  setSaved(prev => [entry, ...prev].slice(0, 100));
+  await supabase.from("boards").insert({
+    email: user.email,
+    board_data: JSON.stringify(entry)
+  });
+}
 
   function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
@@ -285,7 +293,8 @@ export default function App() {
                       <p style={{ margin: 0, fontWeight: 500, fontSize: 16, color: "#e8e4dc" }}>{s.title}</p>
                       <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b6870" }}>{s.prompt}</p>
                     </div>
-                    <button onClick={e => { e.stopPropagation(); setSaved(prev => { const u = prev.filter(x => x.id !== s.id); localStorage.setItem("moodboard_saved", JSON.stringify(u)); return u; }); }} style={{ background: "transparent", border: "none", color: "#4a4850", fontSize: 16, cursor: "pointer" }}>✕</button>
+                    <button onClick={e => { e.stopPropagation(); setSaved(prev => prev.filter(x => x.id !== s.id));
+await supabase.from("boards").delete().eq("email", user.email).eq("board_data", JSON.stringify(s));; }} style={{ background: "transparent", border: "none", color: "#4a4850", fontSize: 16, cursor: "pointer" }}>✕</button>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     {s.palette?.map((c, i) => (
