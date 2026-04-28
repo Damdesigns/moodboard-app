@@ -16,10 +16,7 @@ export default function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [saved, setSaved] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("moodboard_saved") || "[]"); }
-    catch { return []; }
-  });
+  const [saved, setSaved] = useState([]);
   const [tab, setTab] = useState("create");
   const [usage, setUsage] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -32,17 +29,11 @@ export default function App() {
     supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) loadUserData(session.user);
+      if (!session?.user) setSaved([]);
     });
   }, []);
 
   async function loadUserData(u) {
-    const { data: boards } = await supabase
-  .from("boards")
-  .select("*")
-  .eq("email", u.email)
-  .order("created_at", { ascending: false });
-if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
-
     const { data } = await supabase.from("users").select("*").eq("email", u.email).single();
     if (!data) {
       await supabase.from("users").insert({
@@ -55,15 +46,25 @@ if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
       const count = data.last_generation_date === today ? data.generations_today : 0;
       setUsage(count); setIsPro(data.is_pro);
     }
+
+    const { data: boards } = await supabase
+      .from("boards")
+      .select("*")
+      .eq("email", u.email)
+      .order("created_at", { ascending: false });
+    if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
   }
 
   async function signInWithGoogle() {
-    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin }
+    });
   }
 
   async function signOut() {
     await supabase.auth.signOut();
-    setUser(null); setIsPro(false); setUsage(0);
+    setUser(null); setIsPro(false); setUsage(0); setSaved([]);
   }
 
   const remaining = isPro ? 999 : FREE_LIMIT - usage;
@@ -104,7 +105,8 @@ if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
       const newCount = usage + 1;
       setUsage(newCount);
       await supabase.from("users").update({
-        generations_today: newCount, last_generation_date: new Date().toDateString()
+        generations_today: newCount,
+        last_generation_date: new Date().toDateString()
       }).eq("email", user.email);
     } catch (e) {
       console.error(e); setResult({ error: true });
@@ -112,18 +114,23 @@ if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
     setLoading(false);
   }
 
- async function handleSave() {
-  if (!result || result.error) return;
-  if (!isPro && saved.length >= 5) { setShowUpgradeModal(true); return; }
-  const entry = { ...result, prompt: input, id: Date.now() };
-  setSaved(prev => [entry, ...prev].slice(0, 100));
-  console.log("saving to supabase", user?.email);
-  const { error } = await supabase.from("boards").insert({
-    email: user.email,
-    board_data: JSON.stringify(entry)
-  });
-  if (error) console.error("supabase error", error);
-}
+  async function handleSave() {
+    if (!result || result.error) return;
+    if (!user) return;
+    if (!isPro && saved.length >= 5) { setShowUpgradeModal(true); return; }
+    const entry = { ...result, prompt: input, id: Date.now() };
+    setSaved(prev => [entry, ...prev].slice(0, 100));
+    const { error } = await supabase.from("boards").insert({
+      email: user.email,
+      board_data: JSON.stringify(entry)
+    });
+    if (error) console.error("supabase board save error:", error);
+  }
+
+  async function handleDelete(s) {
+    setSaved(prev => prev.filter(x => x.id !== s.id));
+    await supabase.from("boards").delete().eq("email", user.email).eq("board_data", JSON.stringify(s));
+  }
 
   function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
@@ -295,8 +302,7 @@ if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
                       <p style={{ margin: 0, fontWeight: 500, fontSize: 16, color: "#e8e4dc" }}>{s.title}</p>
                       <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b6870" }}>{s.prompt}</p>
                     </div>
-                    <button onClick={e => { e.stopPropagation(); setSaved(prev => prev.filter(x => x.id !== s.id));
-await supabase.from("boards").delete().eq("email", user.email).eq("board_data", JSON.stringify(s));; }} style={{ background: "transparent", border: "none", color: "#4a4850", fontSize: 16, cursor: "pointer" }}>✕</button>
+                    <button onClick={e => { e.stopPropagation(); handleDelete(s); }} style={{ background: "transparent", border: "none", color: "#4a4850", fontSize: 16, cursor: "pointer" }}>✕</button>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     {s.palette?.map((c, i) => (
