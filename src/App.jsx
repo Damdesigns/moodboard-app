@@ -117,7 +117,7 @@ if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
   if (!isPro && saved.length >= 5) { setShowUpgradeModal(true); return; }
   const entry = { ...result, prompt: input, id: Date.now() };
   setSaved(prev => [entry, ...prev].slice(0, 100));
-  await supabase.from("boards").insert({
+  console.log("saving to supabase", user.email); await supabase.from("boards").insert({
     email: user.email,
     board_data: JSON.stringify(entry)
   });
