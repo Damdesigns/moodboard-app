@@ -15,7 +15,7 @@ const CATEGORIES = {
   "🕰️ Vintage": ["1920s speakeasy jazz club", "1970s Italian cinema", "1940s Hollywood film noir", "1930s Shanghai nightclub", "1950s American diner", "1960s Mod London boutique", "1920s Harlem Renaissance", "Weimar Republic cabaret", "1970s Blaxploitation cinema", "1950s French Riviera glamour"],
   "🌿 Nature": ["deep sea bioluminescence", "Himalayan monastery snowstorm", "Mongolian steppe at dusk", "Amazonian shaman ritual", "Pacific island volcanic eruption", "Icelandic black sand beach storm", "Norwegian fjord winter storm", "Patagonian wilderness fog", "Andean condor peak at dawn", "Finnish sauna winter night"],
   "🏙️ Urban": ["rainy Tokyo night", "cyberpunk Bangkok", "Tokyo convenience store at 3am", "cyberpunk favela rooftop", "brutalist Eastern European apartment block", "1980s Miami Vice sunset", "1980s Tokyo bubble economy", "1970s Hong Kong action cinema", "neon noir detective agency", "brutalist parking garage midnight"],
-  "🚀 Futuristic": ["Martian dust storm settlement", "underwater gothic cathedral", "post-apocalyptic greenhouse", "Soviet cosmonaut training facility", "1960s NASA mission control", "underwater abandoned city", "deep sea pressure laboratory", "Arctic research station isolation", "1960s Cape Canaveral rocket launch", "Martian colony greenhouse"],
+  "🚀 Futuristic": ["Martian dust storm settlement", "underwater gothic cathedral", "post-apocalyptic greenhouse", "Soviet cosmonaut training facility", "1960s NASA mission control", "underwater abandoned city", "Arctic research station isolation", "1960s Cape Canaveral rocket launch"],
   "🔮 Spiritual": ["Amazonian shaman ritual", "Sufi whirling dervish ceremony", "Tibetan sky burial plateau", "New Orleans voodoo jazz funeral", "ancient Egyptian tomb at midnight", "Indonesian shadow puppet theater", "Byzantine mosaic church", "Japanese wabi-sabi tea ceremony", "ancient Mayan observatory", "Siberian shaman ritual"]
 };
 
@@ -90,7 +90,8 @@ const styles = `
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   @keyframes moonFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  @keyframes slideOut { from { opacity: 1; transform: translateX(-50%) translateY(0); } to { opacity: 0; transform: translateX(-50%) translateY(20px); } }
   .fade-in { animation: fadeInUp 0.5s ease forwards; }
   .card { background: rgba(20,20,30,0.7); backdrop-filter: blur(12px); border: 0.5px solid rgba(139,92,246,0.15); border-radius: 16px; transition: border-color 0.2s ease; }
   .card:hover { border-color: rgba(139,92,246,0.3); }
@@ -110,6 +111,7 @@ const styles = `
   input:focus { border-color: rgba(139,92,246,0.5) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
   .loading-moon { animation: moonFloat 2s ease-in-out infinite; font-size: 32px; display: block; text-align: center; margin-bottom: 12px; }
   .pulse { animation: pulse 1.5s ease-in-out infinite; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(20,20,30,0.97); border: 0.5px solid rgba(139,92,246,0.4); border-radius: 12px; padding: 12px 24px; font-size: 14px; color: #e8e4dc; backdrop-filter: blur(12px); z-index: 999; white-space: nowrap; animation: slideIn 0.3s ease forwards; box-shadow: 0 8px 32px rgba(0,0,0,0.5); pointer-events: none; }
 `;
 
 function ExampleBoard({ board, mobile }) {
@@ -160,6 +162,7 @@ export default function App() {
   const [copied, setCopied] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
   const [trending, setTrending] = useState([]);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setMobile(isMobile());
@@ -181,20 +184,12 @@ export default function App() {
   }, []);
 
   async function loadTrending() {
-    const { data } = await supabase
-      .from("trending")
-      .select("aesthetic, count")
-      .order("count", { ascending: false })
-      .limit(6);
+    const { data } = await supabase.from("trending").select("aesthetic, count").order("count", { ascending: false }).limit(6);
     if (data) setTrending(data);
   }
 
   async function trackTrending(aesthetic) {
-    const { data } = await supabase
-      .from("trending")
-      .select("*")
-      .eq("aesthetic", aesthetic)
-      .single();
+    const { data } = await supabase.from("trending").select("*").eq("aesthetic", aesthetic).single();
     if (data) {
       await supabase.from("trending").update({ count: data.count + 1 }).eq("aesthetic", aesthetic);
     } else {
@@ -225,9 +220,7 @@ export default function App() {
       const count = data.last_generation_date === today ? data.generations_today : 0;
       setUsage(count); setIsPro(data.is_pro);
     }
-    const { data: boards } = await supabase
-      .from("boards").select("*").eq("email", u.email)
-      .order("created_at", { ascending: false });
+    const { data: boards } = await supabase.from("boards").select("*").eq("email", u.email).order("created_at", { ascending: false });
     if (boards) setSaved(boards.map(b => JSON.parse(b.board_data)));
   }
 
@@ -241,6 +234,11 @@ export default function App() {
   }
 
   const remaining = isPro ? 999 : FREE_LIMIT - usage;
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }
 
   async function generate(prompt) {
     if (!user) { signInWithGoogle(); return; }
@@ -311,23 +309,28 @@ export default function App() {
     if (!isPro && saved.length >= 5) { setShowUpgradeModal(true); return; }
     const entry = { ...result, prompt: input, id: Date.now() };
     setSaved(prev => [entry, ...prev].slice(0, 100));
+    showToast("✓ Board saved to collection");
     const { error } = await supabase.from("boards").insert({ email: user.email, board_data: JSON.stringify(entry) });
     if (error) console.error("supabase board save error:", error);
   }
 
   async function handleDelete(s) {
     setSaved(prev => prev.filter(x => x.id !== s.id));
+    showToast("Board deleted");
     await supabase.from("boards").delete().eq("email", user.email).eq("board_data", JSON.stringify(s));
   }
 
   function copyToClipboard(text, id) {
     navigator.clipboard.writeText(text);
-    setCopied(id); setTimeout(() => setCopied(null), 1500);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 1500);
+    showToast("✓ Hex code copied!");
   }
 
   async function shareBoard() {
     const el = document.getElementById("mood-board-result");
     if (!el) return;
+    showToast("📸 Preparing your image...");
     const canvas = await html2canvas(el, { backgroundColor: "#0a0a12", scale: 2 });
     const ctx = canvas.getContext("2d");
     if (!isPro) {
@@ -342,6 +345,7 @@ export default function App() {
       a.href = url;
       a.download = `${result.title || "moodboard"}.png`;
       a.click();
+      showToast("✓ Image downloaded!");
     });
   }
 
@@ -364,6 +368,8 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a12", color: "#e8e4dc", fontFamily: "'Inter', system-ui, sans-serif", position: "relative", overflow: "hidden" }}>
       <style>{styles}</style>
+
+      {toast && <div className="toast">{toast}</div>}
 
       <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", background: "radial-gradient(ellipse at 20% 20%, rgba(139,92,246,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(109,40,217,0.06) 0%, transparent 50%)" }} />
 
@@ -413,7 +419,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Categories */}
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {Object.keys(CATEGORIES).map(cat => (
@@ -422,7 +427,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Trending */}
             {trending.length > 0 && (
               <div style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 11, color: "#6b6870", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, whiteSpace: "nowrap" }}>🔥 Trending</span>
@@ -432,10 +436,9 @@ export default function App() {
               </div>
             )}
 
-            {/* Input */}
             <div style={{ display: "flex", gap: 8, marginBottom: "1.5rem" }}>
               <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && input.trim() && generate(input.trim())} placeholder={activeCategory ? `Random from ${activeCategory}...` : "rainy Tokyo night, haunted library..."} style={{ flex: 1, background: "rgba(20,20,30,0.8)", border: "0.5px solid rgba(255,255,255,0.08)", borderRadius: 12, color: "#e8e4dc", fontSize: mobile ? 16 : 15, padding: mobile ? "14px 16px" : "13px 16px", outline: "none", fontFamily: "inherit", transition: "border-color 0.2s, box-shadow 0.2s" }} />
-              <button className="btn-secondary" onClick={surpriseMe} disabled={loading} title={activeCategory ? `Random ${activeCategory}` : "Surprise me!"} style={{ fontSize: 18, padding: "0 14px", minWidth: 48, opacity: loading ? 0.5 : 1 }}>🎲</button>
+              <button className="btn-secondary" onClick={surpriseMe} disabled={loading} title="Surprise me!" style={{ fontSize: 18, padding: "0 14px", minWidth: 48, opacity: loading ? 0.5 : 1 }}>🎲</button>
               <button className="btn-primary" onClick={() => input.trim() && generate(input.trim())} disabled={loading} style={{ fontSize: mobile ? 13 : 14, padding: "0 18px", minWidth: mobile ? 80 : 100, opacity: loading ? 0.5 : 1 }}>
                 {loading ? "..." : !user ? "Sign in" : remaining > 0 ? "Generate" : "Upgrade"}
               </button>
