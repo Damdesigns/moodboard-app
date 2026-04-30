@@ -89,11 +89,15 @@ export default function App() {
         last_generation_date: new Date().toDateString()
       });
       setUsage(0); setIsPro(false);
-      fetch("/api/send-email", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email: u.email, type: "welcome" })
-});
+      const sentKey = `welcome_sent_${u.email}`;
+if (!localStorage.getItem(sentKey)) {
+  localStorage.setItem(sentKey, "true");
+  fetch("/api/send-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: u.email, type: "welcome" })
+  });
+}
     } else {
       const today = new Date().toDateString();
       const count = data.last_generation_date === today ? data.generations_today : 0;
