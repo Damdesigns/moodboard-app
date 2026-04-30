@@ -58,6 +58,118 @@ const AESTHETICS = [
   "1930s Depression era dust bowl", "Japanese cherry blossom cemetery"
 ];
 
+const EXAMPLE_BOARDS = [
+  {
+    title: "Rainy Tokyo Night",
+    tagline: "Where neon bleeds into wet asphalt",
+    palette: [
+      { hex: "#0a0a0f", name: "Void Black" },
+      { hex: "#1a1a2e", name: "Midnight Blue" },
+      { hex: "#ff2d78", name: "Neon Pink" },
+      { hex: "#00d4ff", name: "Electric Cyan" },
+      { hex: "#4a4a6a", name: "Concrete Gray" },
+      { hex: "#ffd700", name: "Taxi Yellow" }
+    ],
+    fonts: [
+      { name: "Noto Sans JP", role: "Display", description: "Clean Japanese-inspired typography for urban signage" },
+      { name: "Space Mono", role: "Body", description: "Monospaced digital type evoking flickering screens" }
+    ],
+    textures: ["rain-slicked asphalt", "neon tube glass", "concrete pillar grime", "foggy glass condensation"],
+    keywords: ["noir", "electric", "humid", "lonely", "cinematic", "urban", "midnight", "neon"],
+    sceneDescription: "A narrow alley in Shinjuku at 2am. Rain hammers corrugated metal roofs. Vending machines cast pink and cyan pools on flooded pavement. A salaryman stands motionless under a broken umbrella, cigarette ember the only warmth in the frame."
+  },
+  {
+    title: "Soviet Brutalism",
+    tagline: "Concrete. Cold. Built to last forever.",
+    palette: [
+      { hex: "#2a2a2a", name: "Soot Gray" },
+      { hex: "#8b7355", name: "Rust Ochre" },
+      { hex: "#f5f0e8", name: "Bone White" },
+      { hex: "#1c1c1c", name: "Shadow Black" },
+      { hex: "#6b6b6b", name: "Weathered Steel" },
+      { hex: "#c4a882", name: "Aged Concrete" }
+    ],
+    fonts: [
+      { name: "Oswald", role: "Display", description: "Condensed authority — built for propaganda posters and monumental signage" },
+      { name: "IBM Plex Mono", role: "Body", description: "Cold mechanical precision of state-issued documents" }
+    ],
+    textures: ["poured concrete panels", "rusted rebar exposed", "crumbling plaster", "stamped metal ventilation grates"],
+    keywords: ["imposing", "raw", "monolithic", "austere", "cold", "permanent", "mass", "state"],
+    sceneDescription: "A housing block in Minsk, 1978. Sixteen floors of identical windows stare down at an empty courtyard. Wind moves through gaps in the structure with a low moan. Snow has settled in the corners of every concrete ledge. Nothing here was built for beauty — only duration."
+  },
+  {
+    title: "Deep Sea Bioluminescence",
+    tagline: "Light born in total darkness",
+    palette: [
+      { hex: "#020b18", name: "Abyss Black" },
+      { hex: "#003366", name: "Midnight Ocean" },
+      { hex: "#00ffcc", name: "Bioluminescent Teal" },
+      { hex: "#7b2fff", name: "Deep Violet" },
+      { hex: "#00a8cc", name: "Cold Blue" },
+      { hex: "#0d1f3c", name: "Bathyal Dark" }
+    ],
+    fonts: [
+      { name: "Cormorant Garamond", role: "Display", description: "Elegant and otherworldly — like creatures that have never seen sunlight" },
+      { name: "Raleway Light", role: "Body", description: "Thin and ethereal, barely there like light at 3000 meters depth" }
+    ],
+    textures: ["jellyfish membrane translucency", "deep sea pressure distortion", "bioluminescent particle drift", "black smoker mineral crust"],
+    keywords: ["ethereal", "alien", "glowing", "silent", "pressure", "ancient", "invisible", "cold"],
+    sceneDescription: "Three thousand meters below the surface. No light has ever reached here from above. A lanternfish drifts past — its photophores firing in a rhythm no human has decoded. Around it, invisible currents carry microscopic creatures that have evolved in complete isolation for forty million years. The darkness here is not absence. It is presence."
+  }
+];
+
+function ExampleBoard({ board }) {
+  return (
+    <div style={{ background: "#141418", border: "0.5px solid #2a2a2e", borderRadius: 14, padding: "1.5rem", marginBottom: 16 }}>
+      <div style={{ marginBottom: "1.25rem" }}>
+        <h3 style={{ margin: 0, fontSize: 22, fontWeight: 500, color: "#e8e4dc" }}>{board.title}</h3>
+        <p style={{ margin: "4px 0 0", fontSize: 14, color: "#9d9aa6", fontStyle: "italic" }}>{board.tagline}</p>
+      </div>
+
+      <div style={{ marginBottom: "1.25rem" }}>
+        <p style={{ margin: "0 0 8px", fontSize: 11, letterSpacing: "0.12em", color: "#6b6870", textTransform: "uppercase" }}>Palette</p>
+        <div style={{ display: "flex", gap: 6 }}>
+          {board.palette.map((c, i) => (
+            <div key={i} style={{ flex: 1 }}>
+              <div style={{ height: 56, borderRadius: 6, background: c.hex }} />
+              <p style={{ margin: "4px 0 0", fontSize: 9, color: "#4a4850", textAlign: "center", fontFamily: "monospace" }}>{c.hex}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: "1.25rem" }}>
+        <p style={{ margin: "0 0 8px", fontSize: 11, letterSpacing: "0.12em", color: "#6b6870", textTransform: "uppercase" }}>Keywords</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {board.keywords.map((k, i) => (
+            <span key={i} style={{ background: "#1e1c22", border: "0.5px solid #2a2a2e", borderRadius: 20, padding: "4px 10px", fontSize: 12, color: "#c4c0cc" }}>{k}</span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: "1.25rem" }}>
+        <p style={{ margin: "0 0 8px", fontSize: 11, letterSpacing: "0.12em", color: "#6b6870", textTransform: "uppercase" }}>Typography</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {board.fonts.map((f, i) => (
+            <div key={i} style={{ background: "#1e1c22", borderRadius: 8, padding: "10px 12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: "#e8e4dc" }}>{f.name}</span>
+                <span style={{ fontSize: 9, background: "#2a2a2e", borderRadius: 4, padding: "2px 5px", color: "#8b7fa0", textTransform: "uppercase" }}>{f.role}</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 11, color: "#6b6870", lineHeight: 1.4 }}>{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ background: "#1e1c22", borderRadius: 10, padding: "12px 14px" }}>
+        <p style={{ margin: "0 0 6px", fontSize: 11, letterSpacing: "0.12em", color: "#6b6870", textTransform: "uppercase" }}>Scene</p>
+        <p style={{ margin: 0, fontSize: 13, color: "#c4c0cc", lineHeight: 1.7, fontStyle: "italic" }}>{board.sceneDescription}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [isPro, setIsPro] = useState(false);
@@ -90,14 +202,14 @@ export default function App() {
       });
       setUsage(0); setIsPro(false);
       const sentKey = `welcome_sent_${u.email}`;
-if (!localStorage.getItem(sentKey)) {
-  localStorage.setItem(sentKey, "true");
-  fetch("/api/send-email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: u.email, type: "welcome" })
-  });
-}
+      if (!localStorage.getItem(sentKey)) {
+        localStorage.setItem(sentKey, "true");
+        fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: u.email, type: "welcome" })
+        });
+      }
     } else {
       const today = new Date().toDateString();
       const count = data.last_generation_date === today ? data.generations_today : 0;
@@ -349,6 +461,15 @@ if (!localStorage.getItem(sentKey)) {
                 <button onClick={handleSave} style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 8, color: "#c4c0cc", fontSize: 13, padding: "9px 18px", cursor: "pointer" }}>Save to collection</button>
                 <button onClick={shareBoard} style={{ background: "#1e1c22", border: "0.5px solid #3a3740", borderRadius: 8, color: "#c4c0cc", fontSize: 13, padding: "9px 18px", cursor: "pointer" }}>{isPro ? "Export PNG" : "Share 📸"}</button>
               </div>
+            </div>
+          )}
+
+          {!result && !loading && (
+            <div>
+              <p style={{ fontSize: 11, letterSpacing: "0.12em", color: "#6b6870", textTransform: "uppercase", marginBottom: 16 }}>✨ Example boards</p>
+              {EXAMPLE_BOARDS.map((board, i) => (
+                <ExampleBoard key={i} board={board} />
+              ))}
             </div>
           )}
         </div>
