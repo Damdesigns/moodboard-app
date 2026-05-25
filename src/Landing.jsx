@@ -156,7 +156,7 @@ export default function Landing({ onEnter }) {
           </button>
         </div>
 
-        <p style={{ marginTop: 16, fontSize: 12, color: "#4a4850" }}>No credit card required · 3 free boards per day</p>
+        <p style={{ marginTop: 16, fontSize: 12, color: "#4a4850" }}>No credit card required · 1 free board per day</p>
       </section>
 
       {/* Example board */}
