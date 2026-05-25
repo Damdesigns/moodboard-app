@@ -9,7 +9,7 @@ const supabase = createClient(
 );
 
 const STRIPE_LINK = "https://buy.stripe.com/fZu28sgwWcqoa84cZcfnO00";
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 1;
 
 const CATEGORIES = {
   "🌑 Dark & Moody": ["Soviet brutalism", "noir detective rainy street", "Gothic Victorian funeral parlor", "Nordic black metal forest", "abandoned Japanese pachinko parlor", "Chernobyl exclusion zone spring", "Cold War nuclear bunker", "Transylvanian castle thunderstorm", "Siberian gulag winter", "Detroit abandoned factory"],
@@ -549,7 +549,7 @@ export default function App() {
             {user && !isPro && remaining <= 0 && (
               <div className="fade-in" style={{ background: "rgba(139,92,246,0.08)", border: "0.5px solid rgba(139,92,246,0.3)", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                 <div>
-                  <p style={{ margin: 0, fontWeight: 500, color: "#e8e4dc", fontSize: 14 }}>You've used all 3 free generations today</p>
+                  <p style={{ margin: 0, fontWeight: 500, color: "#e8e4dc", fontSize: 14 }}>You've used your free generation today</p>
                   <p style={{ margin: "4px 0 0", fontSize: 12, color: "#9d9aa6" }}>Upgrade for unlimited — $7/month</p>
                 </div>
                 <button className="btn-primary" onClick={() => setShowUpgradeModal(true)} style={{ fontSize: 13, padding: "9px 16px" }}>Upgrade Now</button>
@@ -560,7 +560,7 @@ export default function App() {
               <div className="card fade-in" style={{ padding: "1rem 1.25rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: 500, color: "#e8e4dc", fontSize: 14 }}>Sign in to start creating</p>
-                  <p style={{ margin: "4px 0 0", fontSize: 12, color: "#9d9aa6" }}>Get 3 free mood boards per day</p>
+                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "#9d9aa6" }}>Get 1 free mood board per day</p>
                 </div>
                 <button className="btn-secondary" onClick={signInWithGoogle} style={{ fontSize: 13, padding: "9px 16px" }}>Sign in with Google</button>
               </div>
