@@ -287,7 +287,7 @@ export default function Landing({ onEnter }) {
           <h2 style={{ fontSize: mobile ? 24 : 36, fontWeight: 700, letterSpacing: "-0.5px", marginBottom: 12 }}>Ready to find your aesthetic?</h2>
           <p style={{ fontSize: mobile ? 14 : 16, color: "#6b6870", marginBottom: 28, lineHeight: 1.6 }}>Join designers, writers, brand strategists and creatives who use Mood Board AI to turn feelings into visual worlds.</p>
           <button className="btn-primary" onClick={onEnter} style={{ fontSize: mobile ? 16 : 18, padding: mobile ? "15px 32px" : "18px 48px" }}>Start Creating Free →</button>
-          <p style={{ marginTop: 12, fontSize: 12, color: "#4a4850" }}>No credit card · 3 free boards daily</p>
+          <p style={{ marginTop: 12, fontSize: 12, color: "#4a4850" }}>No credit card · 1 free board daily</p>
         </div>
       </section>
 
